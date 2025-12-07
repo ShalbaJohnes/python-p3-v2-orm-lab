@@ -1,6 +1,6 @@
-from lib.__init__ import CURSOR, CONN
-from lib.department import Department
-from lib.employee import Employee
+from __init__ import CURSOR, CONN
+from department import Department
+from employee import Employee
 
 
 class Review:
@@ -14,6 +14,12 @@ class Review:
         self.summary = summary
         self.employee_id = employee_id
 
+    def __repr__(self):
+        return (
+            f"<Review {self.id}: {self.year}, {self.summary}, "
+            + f"Employee: {self.employee_id}>"
+        )
+
     @property
     def year(self):
         return self._year
@@ -23,7 +29,9 @@ class Review:
         if isinstance(year, int) and year >= 2000:
             self._year = year
         else:
-            raise ValueError("Year must be an integer greater than or equal to 2000")
+            raise ValueError(
+                "year must be an integer >= 2000"
+            )
 
     @property
     def summary(self):
@@ -31,10 +39,12 @@ class Review:
 
     @summary.setter
     def summary(self, summary):
-        if isinstance(summary, str) and len(summary):
+        if isinstance(summary, str) and len(summary) > 0:
             self._summary = summary
         else:
-            raise ValueError("Summary must be a non-empty string")
+            raise ValueError(
+                "summary must be a non-empty string"
+            )
 
     @property
     def employee_id(self):
@@ -42,16 +52,11 @@ class Review:
 
     @employee_id.setter
     def employee_id(self, employee_id):
-        if isinstance(employee_id, int) and Employee.find_by_id(employee_id):
+        if type(employee_id) is int and Employee.find_by_id(employee_id):
             self._employee_id = employee_id
         else:
-            raise ValueError("employee_id must reference an employee in the database")
-
-    def __repr__(self):
-        return (
-            f"<Review {self.id}: {self.year}, {self.summary}, "
-            + f"Employee: {self.employee_id}>"
-        )
+            raise ValueError(
+                "employee_id must reference an employee in the database")
 
     @classmethod
     def create_table(cls):
@@ -62,10 +67,9 @@ class Review:
             year INT,
             summary TEXT,
             employee_id INTEGER,
-            FOREIGN KEY (employee_id) REFERENCES employees(id))
+            FOREIGN KEY (employee_id) REFERENCES employee(id))
         """
-        with CONN.cursor() as cursor:
-            cursor.execute(sql)
+        CURSOR.execute(sql)
         CONN.commit()
 
     @classmethod
@@ -74,8 +78,7 @@ class Review:
         sql = """
             DROP TABLE IF EXISTS reviews;
         """
-        with CONN.cursor() as cursor:
-            cursor.execute(sql)
+        CURSOR.execute(sql)
         CONN.commit()
 
     def save(self):
@@ -83,13 +86,14 @@ class Review:
         Update object id attribute using the primary key value of new row.
         Save the object in local dictionary using table row's PK as dictionary key"""
         sql = """
-            INSERT INTO reviews (year, summary, employee_id)
-            VALUES (?, ?, ?)
+                INSERT INTO reviews (year, summary, employee_id)
+                VALUES (?, ?, ?)
         """
-        with CONN.cursor() as cursor:
-            cursor.execute(sql, (self.year, self.summary, self.employee_id))
-            self.id = cursor.lastrowid
+
+        CURSOR.execute(sql, (self.year, self.summary, self.employee_id))
         CONN.commit()
+
+        self.id = CURSOR.lastrowid
         type(self).all[self.id] = self
 
     @classmethod
@@ -105,9 +109,11 @@ class Review:
         # Check the dictionary for  existing instance using the row's primary key
         review = cls.all.get(row[0])
         if review:
+            # ensure attributes match row values in case local instance was modified
             review.year = row[1]
             review.summary = row[2]
             review.employee_id = row[3]
+        # not in dictionary, create new instance and add to dictionary
         else:
             review = cls(row[1], row[2], row[3])
             review.id = row[0]
@@ -123,8 +129,8 @@ class Review:
             FROM reviews
             WHERE id = ?
         """
-        with CONN.cursor() as cursor:
-            row = cursor.execute(sql, (id,)).fetchone()
+
+        row = CURSOR.execute(sql, (id,)).fetchone()
         return cls.instance_from_db(row) if row else None
 
     def update(self):
@@ -134,8 +140,8 @@ class Review:
             SET year = ?, summary = ?, employee_id = ?
             WHERE id = ?
         """
-        with CONN.cursor() as cursor:
-            cursor.execute(sql, (self.year, self.summary, self.employee_id, self.id))
+        CURSOR.execute(sql, (self.year, self.summary,
+                            self.employee_id, self.id))
         CONN.commit()
 
     def delete(self):
@@ -145,10 +151,14 @@ class Review:
             DELETE FROM reviews
             WHERE id = ?
         """
-        with CONN.cursor() as cursor:
-            cursor.execute(sql, (self.id,))
+
+        CURSOR.execute(sql, (self.id,))
         CONN.commit()
+        
+        # Delete the dictionary entry using id as the key
         del type(self).all[self.id]
+
+        # Set the id to None
         self.id = None
 
     @classmethod
@@ -158,6 +168,7 @@ class Review:
             SELECT *
             FROM reviews
         """
-        rows = CURSOR.execute(sql).fetchall()
-        return [cls.instance_from_db(row) for row in rows]
 
+        rows = CURSOR.execute(sql).fetchall()
+
+        return [cls.instance_from_db(row) for row in rows]

@@ -1,5 +1,6 @@
+
 # lib/department.py
-from lib.__init__ import CURSOR, CONN
+from __init__ import CURSOR, CONN
 
 
 class Department:
@@ -13,7 +14,7 @@ class Department:
         self.location = location
 
     def __repr__(self):
-        return f"<Department {self.id}: {self.name}, {self.location}>"
+        return "<Department {}: {}, {}>".format(self.id, self.name, self.location)
 
     @property
     def name(self):
@@ -50,8 +51,7 @@ class Department:
             name TEXT,
             location TEXT)
         """
-        with CONN.cursor() as cursor:
-            cursor.execute(sql)
+        CURSOR.execute(sql)
         CONN.commit()
 
     @classmethod
