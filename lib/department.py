@@ -1,5 +1,5 @@
 # lib/department.py
-from __init__ import CURSOR, CONN
+from lib.__init__ import CURSOR, CONN
 
 
 class Department:
@@ -50,7 +50,8 @@ class Department:
             name TEXT,
             location TEXT)
         """
-        CURSOR.execute(sql)
+        with CONN.cursor() as cursor:
+            cursor.execute(sql)
         CONN.commit()
 
     @classmethod

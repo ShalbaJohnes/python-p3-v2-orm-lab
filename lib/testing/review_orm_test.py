@@ -14,6 +14,7 @@ class TestReview:
         CURSOR.execute("DROP TABLE IF EXISTS reviews")
         CURSOR.execute("DROP TABLE IF EXISTS employees")
         CURSOR.execute("DROP TABLE IF EXISTS departments")
+        CONN.commit()
 
     def test_creates_table(self):
         '''contains method "create_table()" that creates table "reviews" if it does not exist.'''
